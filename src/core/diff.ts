@@ -172,10 +172,13 @@ function diffApplyOp(
 /**
  * Apply a complete set of diff operations to an Object
  */
-export function diffApply<T extends object>(value: T, diff: ObjectPatchDiff): T {
+export function diffApply<T extends object>(value: T | undefined, diff: ObjectPatchDiff): T {
+	if (value === undefined && diff.length === 0) {
+		throw Error(`Cannot apply empty diff without an object`)
+	}
 	for (const op of diff) {
 		const path = diffDecodePath(op[1])
 		value = diffApplyOp([], path, value, op)
 	}
-	return value
+	return value!
 }
