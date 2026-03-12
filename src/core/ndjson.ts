@@ -59,6 +59,15 @@ function parseContentType(value: string): [string, string] {
 	return [type, parameters['charset'] || 'utf8']
 }
 
+export class PlainJsonError extends Error {
+	constructor(public readonly data: any) {
+		super('fetch failed: received plain application/json response')
+	}
+}
+
+/**
+ * New line delimited JSON fetch implementation
+ */
 export async function* fetchNdJSON<T>(
 	input: string | URL | Request,
 	init?: RequestInit
@@ -74,10 +83,7 @@ export async function* fetchNdJSON<T>(
 	const ctHeader = res.headers.get('content-type')
 	const [type, encoding] = parseContentType(ctHeader ?? '')
 
-	if (type === 'application/json') {
-		// Fall back to plain JSON
-		yield await res.json()
-	} else if (type === 'application/x-ndjson') {
+	if (type === 'application/x-ndjson') {
 		// Stream the JSON
 		const reader = res.body.getReader()
 		const decoder = new TextDecoder(encoding)
@@ -99,7 +105,11 @@ export async function* fetchNdJSON<T>(
 		// Flush any remaining line
 		const tail = buffer.trim()
 		if (tail) yield JSON.parse(tail) as T
+	} else if (type === 'application/json') {
+		// Fail but conserve the data, may be used as fallback
+		throw new PlainJsonError(await res.json())
 	} else {
+		// Unknown format
 		throw new Error(`fetch failed: invalid response content type ${ctHeader}`)
 	}
 }

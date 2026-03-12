@@ -1,21 +1,16 @@
 import { useEffect, useState } from 'react'
-import { fetchNdJSON } from '../core/ndjson.ts'
+import type { ExampleTextState } from './exampleTextApi.ts'
+import { fetchObjectStream } from '../core/stream.ts'
 
 export function ExampleText() {
-	const [state, setState] = useState<string[]>([])
+	const [state, setState] = useState<ExampleTextState>()
 	useEffect(() => {
 		;(async () => {
-			for await (const message of fetchNdJSON<any>('/api')) {
-				setState((v) => [...v, JSON.stringify(message)])
+			for await (const message of fetchObjectStream<ExampleTextState>('/api')) {
+				setState(message)
 			}
 		})().catch(console.error)
 	}, [])
 
-	return (
-		<div className='rounded bg-gray-300 p-4'>
-			{state.map((item, index) => (
-				<div key={index}>{item}</div>
-			))}
-		</div>
-	)
+	return <div className='rounded bg-gray-300 p-4'>{state?.text}</div>
 }
