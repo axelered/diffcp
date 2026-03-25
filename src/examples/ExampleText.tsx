@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ExampleTextState } from './exampleTextApi.ts'
 import { fetchObjectStream } from '../core/stream.ts'
+import { AppMessage } from './AppMessage.tsx'
 
 export function ExampleText() {
 	const [state, setState] = useState<ExampleTextState>()
@@ -12,5 +13,5 @@ export function ExampleText() {
 		})().catch(console.error)
 	}, [])
 
-	return <div className='rounded bg-gray-300 p-4'>{state?.text}</div>
+	return <AppMessage>{state?.text}</AppMessage>
 }
