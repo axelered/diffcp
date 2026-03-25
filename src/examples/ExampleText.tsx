@@ -1,17 +1,22 @@
-import { useEffect, useState } from 'react'
 import type { ExampleTextState } from './exampleTextApi.ts'
-import { fetchObjectStream } from '../core/stream.ts'
 import { AppMessage } from './AppMessage.tsx'
+import { useObjectStream } from '../react/useObjectStream.ts'
+import { AppButton } from './AppButton.tsx'
 
 export function ExampleText() {
-	const [state, setState] = useState<ExampleTextState>()
-	useEffect(() => {
-		;(async () => {
-			for await (const message of fetchObjectStream<ExampleTextState>('/api')) {
-				setState(message)
-			}
-		})().catch(console.error)
-	}, [])
+	const { submitSync, stop, reset, value } = useObjectStream<ExampleTextState>({
+		url: '/api',
+		initialValue: { text: '' }
+	})
 
-	return <AppMessage>{state?.text}</AppMessage>
+	return (
+		<div>
+			<div className='mb-4 flex justify-end gap-2'>
+				<AppButton onClick={() => submitSync()}>Send</AppButton>
+				<AppButton onClick={() => stop()}>Stop</AppButton>
+				<AppButton onClick={() => reset()}>Reset</AppButton>
+			</div>
+			<AppMessage>{value?.text}</AppMessage>
+		</div>
+	)
 }
