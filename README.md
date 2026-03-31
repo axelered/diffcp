@@ -1,4 +1,73 @@
-# Differential Context Protocol (DCP)
+# ☄️ Differential Context Protocol
+
+<p align="center">
+    <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=000" alt="JavaScript" />
+    <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff" alt="Python" />
+    <img src="https://img.shields.io/badge/Codecov-F01F7A?logo=codecov&logoColor=fff" alt="Codecov" />
+</p>
+
+**Streaming is broken. Not because of speed, but because of complexity.** Today’s “real-time” APIs especially in AI and 
+chat are a pile of ad-hoc events; tokens, partials, tool calls, patches, and retries, all in custom formats. Every 
+system reimplements a fragile event interpreter or relies on opinionated and limiting libraries. Every edge case leaks
+through. Differential Context Protocol replaces all of that with one core idea: **evolving state**. No token streams, no
+custom event tax, and no frontend guesswork.
+
+<p align="center">
+  <img src="./docs/preview.gif" alt="Differential Context Protocol Preview" />
+</p>
+
+## What it does
+
+Turn any API returning a JSON object into a continuous state synchronization channel between backend and frontend.
+Instead of emitting a zoo of events, the server streams compressed state diffs that progressively converge to the final
+value on the client. The schema is fully defined by you.
+
+## Simply disruptive
+
+- 🧩 **One primitive, not twenty** → no events, no tool calls, no bespoke parsers
+- ⚡ **Minimal over-the-wire cost** → only compressed diffs, never full payloads
+- 🔄 **Deterministic state convergence** → frontend always reflects backend truth
+- 🛠 **Drop-in for any existing API** → same endpoint, same type, zero rewrites
+- 🧠 **Kills frontend complexity** → no more event orchestration logic
+
+## How Simple it is
+
+You just need to shift your mental model: Stop streaming events about data, start streaming the data itself evolving.
+
+On the server **yield updated state objects**
+
+```ts
+export async function* streamMessage(): AsyncIterable<MessageType> {
+	yield { text: 'This' }
+	yield { text: 'This is' }
+	yield { text: 'This is a stream' }
+	...
+}
+
+export function GET() {
++	return new ObjectStreamResponse(streamMessage())
+}
+```
+
+On the client **consume an updating state stream**
+
+```ts
++ for await (const data of fetchObjectStream<MessageType>('/api')) {
+	// Consume data
+}
+```
+
+On in React **just render the value**
+
+```tsx
++ const { value } = useObjectStream<MessageType>({
++ 	url: '/api'
++ })
+return <p>{value?.text}</p>
+```
+
+## Protocol
 
 The protocol is designed to be a simple replacement to existing APIs without unnecessary developer burden, and without
 breaking backward compatibility of the endpoint itself. Any existing API that is returning a JSON object of type `T` can
@@ -6,7 +75,7 @@ be extended with this protocol. The protocol streams a small set of event types 
 `T` and the frontend-side state `T` until the request is completed. The protocol is extremely efficient and only
 transmits a minified state diff via the network.
 
-## Messages
+### Messages
 
 The DCP protocol is abstracted into messages, and is only composed of 4 message types all composed by a `string` type
 and a data payload.
@@ -18,31 +87,10 @@ and a data payload.
 | `done`  | Optional `T` | Indicates the end of the stream and can optionally carry a complete state, to resync the state completely to prevent state drift of more efficiently transmit large state changes.                                                                                                                                    |
 | `event` | `any`        | Custom events that can be emitted during the stream and received by the client application. Events do not affect the state syncing in any way.                                                                                                                                                                        |
 
-The messages protocol is carrier agnostic and can therefore support any message driven format and protocol. By default
+The messages protocol is carrier agnostic and can therefore support any message driven format and protocol. By default,
 DCP uses a NDJSON streamed carrier.
 
-## NDJSON Carrier
-
-The protocol is implemented via a new-line separated JSON stream https://ndjson.com/ over HTTP. Similarly to the SSE
-standard this protocol can be used as a response to any HTTP request (GET, POST, ...) denoted with the
-`application/x-ndjson` MIME type. Messages are formatted in the form `{t: string, d: any }`
-
-```text
-{ t: 'init', d: { ... }}  // set the initial value
-{ t: 'delta', d: [ ... ]}  // change it via delta operations
-{ t: 'delta', d: [ ... ]}
-...
-{ t: 'init', d: { ... }}  // set a new plain value
-{ t: 'delta', d: [ ... ]}
-...
-{ t: 'done' }  // complete the stream
-```
-
-> [!TIP]
-> Empty lines and objects not matching the defined signature are ignored. JSON parsing errors will cause the request to
-> fail.
-
-## JSON Diff
+### JSON Diff
 
 JSON diffs or deltas are described as a set of operations with a compact notation inspired
 by [JsonPatch](https://jsonpatch.com/). Here only add, remove, and replace are supported, but **string appending** is
@@ -80,7 +128,32 @@ An example of the protocol looks like this:
 ]
 ```
 
-## Wht not SSE?
+### NDJSON Carrier
+
+The protocol is implemented via a new-line separated JSON stream https://ndjson.com/ over HTTP. Similarly to the SSE
+standard this protocol can be used as a response to any HTTP request (GET, POST, ...) denoted with the
+`application/x-ndjson` MIME type. Messages are formatted in the form `{t: string, d: any }`
+
+```text
+{ t: 'init', d: { ... }}  // set the initial value
+{ t: 'delta', d: [ ... ]}  // change it via delta operations
+{ t: 'delta', d: [ ... ]}
+...
+{ t: 'init', d: { ... }}  // set a new plain value
+{ t: 'delta', d: [ ... ]}
+...
+{ t: 'done' }  // complete the stream
+```
+
+> [!TIP]
+> Empty lines and objects not matching the defined signature are ignored. JSON parsing errors will cause the request to
+> fail.
+
+### 🚧 MessagePack Carrier
+
+This is a work in progress
+
+### Wht not SSE?
 
 The SSE protocol has been created to support server to client event streaming. Is ideal to keep a serer-to-client
 channel open, but as such the technology surrounding it is not ideal for the application.
