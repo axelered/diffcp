@@ -7,6 +7,43 @@ import { AppWebsiteBadge } from './AppWebsiteBadge.tsx'
 import { BrainIcon, CloudIcon, CloudRainIcon, SunIcon } from 'lucide-react'
 import { AppStageBadge } from './AppStageBadge.tsx'
 import { useState } from 'react'
+import clsx from 'clsx'
+
+function Counter({
+	type,
+	mode,
+	title,
+	number
+}: {
+	type: 'n' | 'kB' | '%'
+	mode?: 'warning' | 'good'
+	title: string
+	number: number
+}) {
+	let value = number + ''
+	if (Number.isNaN(number)) {
+		value = '--'
+	} else if (type === 'kB') {
+		value = (number / 1024).toFixed(1) + ' kB'
+	} else if (type === '%') {
+		value = (number * 100).toFixed(0) + '%'
+	}
+	return (
+		<div
+			className={clsx(
+				'flex flex-col items-center rounded-xl px-6 py-2',
+				{
+					'': 'bg-gray-200 text-gray-900',
+					warning: 'bg-amber-200 text-amber-900',
+					good: 'bg-emerald-200 text-emerald-900'
+				}[mode || '']
+			)}
+		>
+			<div className='font-semibold uppercase'>{title}</div>
+			<div className='text-2xl font-bold'>{value}</div>
+		</div>
+	)
+}
 
 export function ExampleText() {
 	const initSizes = { data: 0, frame: 0 } as const
@@ -26,13 +63,7 @@ export function ExampleText() {
 
 	return (
 		<div className='flex flex-col gap-4'>
-			<div className='mb-4 flex items-center justify-end gap-2'>
-				<div className='mr-auto text-xs'>
-					<span>{count} updates </span>
-					<span>{(sizes.data / 1024).toFixed(1)} kB </span>
-					<span>{(sizes.frame / 1024).toFixed(1)} kB </span>
-					<span>{((1 - sizes.frame / sizes.data) * 100).toFixed(0)}% compression</span>
-				</div>
+			<div className='mb-16 flex items-center justify-end gap-2'>
 				<AppButton
 					onClick={() => {
 						setSizes(initSizes)
@@ -50,6 +81,12 @@ export function ExampleText() {
 				>
 					Reset
 				</AppButton>
+			</div>
+			<div className='grid grid-cols-4 gap-8 text-xs'>
+				<Counter type='n' title='Updates' number={count} />
+				<Counter type='kB' mode='warning' title='Status' number={sizes.data} />
+				<Counter type='kB' mode='good' title='Transmitted' number={sizes.frame} />
+				<Counter type='%' mode='good' title='Compress' number={1 - sizes.frame / sizes.data} />
 			</div>
 			{value?.question && <AppMessage role='user'>{value?.question}</AppMessage>}
 			{value?.thinking && (
