@@ -1,17 +1,28 @@
-# ☄️ Differential Context Protocol
+# ☄️ Diffcp - AI Streaming Protocol
 
 <p align="center">
-    <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff" alt="TypeScript" />
-    <img src="https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=000" alt="JavaScript" />
-    <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff" alt="Python" />
-    <img src="https://img.shields.io/badge/Codecov-F01F7A?logo=codecov&logoColor=fff" alt="Codecov" />
+    <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff&style=for-the-badge" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=000&style=for-the-badge" alt="JavaScript" />
+    <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff&style=for-the-badge" alt="Python" />
+    <img src="https://img.shields.io/badge/Codecov-F01F7A?logo=codecov&logoColor=fff&style=for-the-badge" alt="Codecov" />
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
 </p>
 
-**Streaming is broken. Not because of speed, but because of complexity.** Today’s “real-time” APIs especially in AI and 
-chat are a pile of ad-hoc events; tokens, partials, tool calls, patches, and retries, all in custom formats. Every 
-system reimplements a fragile event interpreter or relies on opinionated and limiting libraries. Every edge case leaks
-through. Differential Context Protocol replaces all of that with one core idea: **evolving state**. No token streams, no
-custom event tax, and no frontend guesswork.
+Diffcp (Differential Context Protocol) is the new standard to stream AI Agent state to the user interface. Is a 
+lightweight alternative to any bespoke AI protocol currently in the industry. Purpose built to be versatile
+unopinionated and highly efficient (95%+ compression). It provides all the foundations:
+
+- 🧠 **Kills complexity** → no more event orchestration logic
+- 🧩 **One single model** → no events, no tool calls, just one state model
+- ⚡ **Minimal over-the-wire cost** → highly optimized transmission
+- 🔄 **Deterministic state convergence** → frontend always reflects backend truth
+- 🛠 **Drop-in for any existing API** → same endpoint, same type, zero rewrites
+- 🍔 **Zero dependency** → just raw speed
+
+Today's “real-time” APIs especially in AI and chat are a pile of ad-hoc events; tokens, partials, tool calls, patches,
+and retries, all in custom formats. Every system reimplements a fragile event interpreter or relies on opinionated and
+limiting libraries. Every edge case leaks through. Differential Context Protocol replaces all of that with one core
+idea: **evolving state**. No token streams, no custom event tax, and no frontend guesswork.
 
 <p align="center">
   <img src="./docs/preview.gif" alt="Differential Context Protocol Preview" />
@@ -19,17 +30,9 @@ custom event tax, and no frontend guesswork.
 
 ## What it does
 
-Turn any API returning a JSON object into a continuous state synchronization channel between backend and frontend.
-Instead of emitting a zoo of events, the server streams compressed state diffs that progressively converge to the final
-value on the client. The schema is fully defined by you.
-
-## Simply disruptive
-
-- 🧩 **One primitive, not twenty** → no events, no tool calls, no bespoke parsers
-- ⚡ **Minimal over-the-wire cost** → only compressed diffs, never full payloads
-- 🔄 **Deterministic state convergence** → frontend always reflects backend truth
-- 🛠 **Drop-in for any existing API** → same endpoint, same type, zero rewrites
-- 🧠 **Kills frontend complexity** → no more event orchestration logic
+Turn any JSON API into a continuous state synchronization channel between backend and frontend. Instead of emitting a
+zoo of custom events, the server streams compressed state diffs that progressively converge to the final value on the
+client. The schema is fully defined by you, your API requires minimal modification, and it remains backward compatible.
 
 ## How Simple it is
 
@@ -46,14 +49,14 @@ export async function* streamMessage(): AsyncIterable<MessageType> {
 }
 
 export function GET() {
-+	return new ObjectStreamResponse(streamMessage())
+	return new ObjectStreamResponse(streamMessage())
 }
 ```
 
 On the client **consume an updating state stream**
 
 ```ts
-+ for await (const data of fetchObjectStream<MessageType>('/api')) {
+for await (const data of fetchObjectStream<MessageType>('/api')) {
 	// Consume data
 }
 ```
@@ -61,9 +64,9 @@ On the client **consume an updating state stream**
 On in React **just render the value**
 
 ```tsx
-+ const { value } = useObjectStream<MessageType>({
-+ 	url: '/api'
-+ })
+const { value } = useObjectStream<MessageType>({
+    url: '/api'
+})
 return <p>{value?.text}</p>
 ```
 
