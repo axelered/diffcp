@@ -16,6 +16,7 @@ export interface UseObjectStreamOption<T extends object> {
 export interface UseObjectStreamReturn<T extends object, R> {
 	status: 'idle' | 'submitted' | 'streaming' | 'stopped' | 'done' | 'error'
 	value: T | undefined
+	count: number
 	error: Error | undefined
 	// Submit the request and optionally wait for the final answer. Fails on
 	// error and returns undefined if aborted
@@ -40,7 +41,7 @@ export interface UseObjectStreamReturn<T extends object, R> {
 
 type InnerStatus<T extends object, R> = Pick<
 	UseObjectStreamReturn<T, R>,
-	'status' | 'value' | 'error'
+	'status' | 'value' | 'count' | 'error'
 >
 
 export function useObjectStream<T extends object, R = any>(
@@ -49,6 +50,7 @@ export function useObjectStream<T extends object, R = any>(
 	const resetValue = {
 		status: 'idle',
 		value: options?.initialValue,
+		count: 0,
 		error: undefined
 	} as const
 
@@ -85,6 +87,7 @@ export function useObjectStream<T extends object, R = any>(
 				setValue((old) => ({
 					status: 'submitted',
 					value: options?.keepStale ? old.value : undefined,
+					count: 0,
 					error: undefined
 				}))
 
@@ -106,13 +109,15 @@ export function useObjectStream<T extends object, R = any>(
 				}
 
 				// Consume the stream
+				let count = 0
 				let lastData: T | undefined = undefined
 				for await (const data of fetchObjectStream<T>(request)) {
-					setValue({ status: 'streaming', value: data, error: undefined })
+					count += 1
+					setValue({ status: 'streaming', value: data, count, error: undefined })
 					lastData = data
 				}
 				if (lastData !== undefined) {
-					setValue({ status: 'done', value: lastData, error: undefined })
+					setValue({ status: 'done', value: lastData, count, error: undefined })
 				}
 
 				return lastData
@@ -121,7 +126,7 @@ export function useObjectStream<T extends object, R = any>(
 					if (options?.keepOnStop === false) setValue(resetValue)
 					return undefined
 				} else {
-					setValue({ status: 'error', value: undefined, error: e as any })
+					setValue({ status: 'error', value: undefined, count: 0, error: e as any })
 					throw e
 				}
 			} finally {
