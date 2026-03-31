@@ -1,64 +1,19 @@
-export interface NDJSONStreamResponseInit extends ResponseInit {
-	// Interval between heartbeats
-	heartbeatMs?: number
+import { decodeMultiStream, Encoder } from '@msgpack/msgpack'
+
+/**
+ * Streaming encoding abstraction
+ */
+export interface StreamCodec<M> {
+	readonly contentType: string
+	readonly supportedContentTypes: string[]
+	readonly heartbeat: Uint8Array
+	encode(messages: AsyncIterable<M>): AsyncIterable<Uint8Array>
+	decode(stream: ReadableStream<Uint8Array>, type: string, encoding: string): AsyncIterable<M>
 }
 
 /**
- * New line delimited JSON response stream
+ * Internal error used to signal a fallback of a plain JSON response
  */
-export class NdJSONStreamResponse<M> extends Response {
-	constructor(messages: AsyncIterable<M>, init?: NDJSONStreamResponseInit) {
-		const encoder = new TextEncoder()
-		let heartbeat: any = null
-		const stream = new ReadableStream({
-			async start(controller) {
-				// Keep the connection alive
-				heartbeat = setInterval(() => {
-					controller.enqueue('\n')
-				}, init?.heartbeatMs ?? 15_000)
-
-				// Stream out messages
-				for await (const msg of messages) {
-					controller.enqueue(encoder.encode(JSON.stringify(msg) + '\n'))
-				}
-
-				// Clear
-				clearInterval(heartbeat)
-				controller.close()
-			},
-			cancel() {
-				clearInterval(heartbeat)
-			}
-		})
-
-		super(stream, {
-			...init,
-			headers: {
-				'Content-Type': 'application/x-ndjson; charset=utf-8',
-				'Transfer-Encoding': 'chunked',
-				'Cache-Control': 'no-cache, no-transform',
-				Connection: 'keep-alive',
-				'X-Accel-Buffering': 'no', // Disable nginx buffering
-				...init?.headers
-			}
-		})
-	}
-}
-
-function parseContentType(value: string): [string, string] {
-	const [typePart, ...paramParts] = value.split(';')
-	const type = typePart.trim().toLowerCase()
-	const parameters: Record<string, string> = {}
-	for (const part of paramParts) {
-		const [key, ...rest] = part.split('=')
-		if (!key || rest.length === 0) continue
-		let val = rest.join('=').trim()
-		if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1)
-		parameters[key.trim().toLowerCase()] = val
-	}
-	return [type, parameters['charset'] || 'utf8']
-}
-
 export class PlainJsonError extends Error {
 	constructor(public readonly data: any) {
 		super('fetch failed: received plain application/json response')
@@ -66,50 +21,78 @@ export class PlainJsonError extends Error {
 }
 
 /**
- * New line delimited JSON fetch implementation
+ * Plain NdJSON codec
  */
-export async function* fetchNdJSON<T>(
-	input: string | URL | Request,
-	init?: RequestInit
-): AsyncIterable<T> {
-	const res = await fetch(input, init)
+export class NdJSONCodec<M> implements StreamCodec<M> {
+	readonly contentType = 'application/x-ndjson; charset=utf-8'
+	readonly supportedContentTypes = ['application/x-ndjson', 'application/json']
+	readonly heartbeat: Uint8Array = new Uint8Array([10])
 
-	if (!res.ok) {
-		throw new Error(`fetch failed: ${res.status} ${res.statusText}`)
-	} else if (!res.body) {
-		throw new Error(`fetch failed: empty request body`)
+	async *encode(messages: AsyncIterable<M>): AsyncIterable<Uint8Array> {
+		const encoder = new TextEncoder()
+		for await (const msg of messages) {
+			yield encoder.encode(JSON.stringify(msg) + '\n')
+		}
 	}
 
-	const ctHeader = res.headers.get('content-type')
-	const [type, encoding] = parseContentType(ctHeader ?? '')
-
-	if (type === 'application/x-ndjson') {
-		// Stream the JSON
-		const reader = res.body.getReader()
+	async *decode(
+		stream: ReadableStream<Uint8Array>,
+		type: string,
+		encoding: string
+	): AsyncIterable<M> {
+		const reader = stream.getReader()
 		const decoder = new TextDecoder(encoding)
 		let buffer = ''
 
-		while (true) {
-			const { value, done } = await reader.read()
-			if (done) break
-			buffer += decoder.decode(value, { stream: true })
-			const lines = buffer.split('\n')
-			buffer = lines.pop() ?? ''
-			for (const line of lines) {
-				const trimmed = line.trim()
-				if (!trimmed) continue // Ignore empty lines
-				yield JSON.parse(trimmed) as T
+		if (type === 'application/x-ndjson') {
+			// Stream the JSON
+			while (true) {
+				const { value, done } = await reader.read()
+				if (done) break
+				buffer += decoder.decode(value, { stream: true })
+				const lines = buffer.split('\n')
+				buffer = lines.pop() ?? ''
+				for (const line of lines) {
+					const trimmed = line.trim()
+					if (!trimmed) continue // Ignore empty lines
+					yield JSON.parse(trimmed) as M
+				}
 			}
-		}
 
-		// Flush any remaining line
-		const tail = buffer.trim()
-		if (tail) yield JSON.parse(tail) as T
-	} else if (type === 'application/json') {
-		// Fail but conserve the data, may be used as fallback
-		throw new PlainJsonError(await res.json())
-	} else {
-		// Unknown format
-		throw new Error(`fetch failed: invalid response content type ${ctHeader}`)
+			// Flush any remaining line
+			const tail = buffer.trim()
+			if (tail) yield JSON.parse(tail) as M
+		} else {
+			// Fail but conserve the data, may be used as fallback
+			while (true) {
+				const { value, done } = await reader.read()
+				if (done) break
+				buffer += decoder.decode(value, { stream: true })
+			}
+			throw new PlainJsonError(JSON.parse(buffer))
+		}
+	}
+}
+
+/**
+ * MessagePack codec
+ */
+export class MessagePackCodec<M> implements StreamCodec<M> {
+	readonly contentType = 'application/msgpack'
+	readonly supportedContentTypes = ['application/msgpack']
+	readonly heartbeat: Uint8Array = new Uint8Array([0xc0]) // null
+
+	async *encode(messages: AsyncIterable<M>): AsyncIterable<Uint8Array> {
+		const encoder = new Encoder()
+		for await (const msg of messages) {
+			yield encoder.encode(msg)
+		}
+	}
+
+	async *decode(stream: ReadableStream<Uint8Array>): AsyncIterable<M> {
+		for await (const value of decodeMultiStream(stream)) {
+			if (value == null) continue
+			yield value as M
+		}
 	}
 }

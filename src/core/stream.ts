@@ -1,10 +1,12 @@
-import {
-	fetchNdJSON,
-	NdJSONStreamResponse,
-	type NDJSONStreamResponseInit,
-	PlainJsonError
-} from './ndjson.ts'
 import { diffApply, diffCreate, type ObjectPatchDiff } from './diff.ts'
+import {
+	fetchStream,
+	type FetchStreamInit,
+	StreamResponse,
+	type StreamResponseInit
+} from './carrier.ts'
+import { PlainJsonError } from './ndjson.ts'
+import { Compressor } from './compress.ts'
 
 export type ObjectStreamInit<T> = { t: 'init'; d: T }
 export type ObjectStreamDelta = { t: 'delta'; d: ObjectPatchDiff }
@@ -29,17 +31,20 @@ export type ObjectStreamIterable<T extends object, E> = AsyncIterable<
 	T | StreamReinit<T> | StreamEvent<E>
 >
 
-export interface ObjectStreamResponseInit extends NDJSONStreamResponseInit {
+export interface ObjectStreamResponseInit<T extends object, E> extends StreamResponseInit<
+	ObjectStream<T, E>
+> {
 	sendDataOnDone?: boolean
+	compressor?: Compressor<T, E>
 }
 
 /**
  * Differential Context Protocol Stream
  */
-export class ObjectStreamResponse<T extends object, E = any> extends NdJSONStreamResponse<
+export class ObjectStreamResponse<T extends object, E = any> extends StreamResponse<
 	ObjectStream<T, E>
 > {
-	constructor(stream: ObjectStreamIterable<T, E>, init?: ObjectStreamResponseInit) {
+	constructor(stream: ObjectStreamIterable<T, E>, init?: ObjectStreamResponseInit<T, E>) {
 		async function* wrapped(): AsyncIterable<ObjectStream<T, E>> {
 			let last: T | undefined = undefined
 			for await (const chunk of stream) {
@@ -66,7 +71,8 @@ export class ObjectStreamResponse<T extends object, E = any> extends NdJSONStrea
 			yield init?.sendDataOnDone ? { t: 'done', d: last } : { t: 'done' }
 		}
 
-		super(wrapped(), {
+		const compr = init?.compressor ?? new Compressor()
+		super(compr.deflate(wrapped()), {
 			...init,
 			headers: {
 				...init?.headers,
@@ -76,10 +82,13 @@ export class ObjectStreamResponse<T extends object, E = any> extends NdJSONStrea
 	}
 }
 
-export interface ObjectStreamRequestInit<T extends object, E> extends RequestInit {
+export interface ObjectStreamRequestInit<T extends object, E> extends FetchStreamInit<
+	ObjectStream<T, E>
+> {
 	onFrame?: (frame: ObjectStream<T, E>) => void
 	onEvent?: (event: E) => void
 	fallbackPlainJson?: boolean
+	compressor?: Compressor<T, E>
 }
 
 export async function* fetchObjectStream<T extends object, E = any>(
@@ -90,8 +99,9 @@ export async function* fetchObjectStream<T extends object, E = any>(
 	let done: boolean = false
 	let dataValue: T | undefined = undefined
 
+	const compr = init?.compressor ?? new Compressor()
 	try {
-		for await (const data of fetchNdJSON<ObjectStream<T, E>>(input, ndInit)) {
+		for await (const data of compr.inflate(fetchStream<ObjectStream<T, E>>(input, ndInit))) {
 			init?.onFrame?.(data)
 			if (data.t === 'init') {
 				dataValue = data.d

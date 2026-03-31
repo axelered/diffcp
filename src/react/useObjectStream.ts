@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { fetchObjectStream, type ObjectStream } from '../core/stream.ts'
+import type { StreamCodec } from '../core/ndjson.ts'
 
 export interface UseObjectStreamOption<T extends object> {
 	url?: string
@@ -15,6 +16,8 @@ export interface UseObjectStreamOption<T extends object> {
 	onEvent?: (value: any) => void
 	// Handle individual transmission frames
 	onFrame?: (frame: ObjectStream<T, any>) => void
+	// Carrier codec
+	codec?: StreamCodec<any>
 }
 
 export interface UseObjectStreamReturn<T extends object, R> {
@@ -113,7 +116,8 @@ export function useObjectStream<T extends object, R = any>(
 				}
 				const fetchOptions = {
 					onEvent: options.onEvent,
-					onFrame: options.onFrame
+					onFrame: options.onFrame,
+					codec: options.codec
 				}
 
 				// Consume the stream

@@ -86,7 +86,12 @@ export function ExampleText() {
 				<Counter type='n' title='Updates' number={count} />
 				<Counter type='kB' mode='warning' title='Status' number={sizes.data} />
 				<Counter type='kB' mode='good' title='Transmitted' number={sizes.frame} />
-				<Counter type='%' mode='good' title='Compress' number={1 - sizes.frame / sizes.data} />
+				<Counter
+					type='%'
+					mode='good'
+					title='Compression'
+					number={Math.max(0, 1 - sizes.frame / sizes.data)}
+				/>
 			</div>
 			{value?.question && <AppMessage role='user'>{value?.question}</AppMessage>}
 			{value?.thinking && (
