@@ -171,3 +171,7 @@ protocol.
 
 > [!TIP]
 > The protocol remains compatible and SSE can be used as a carrier without problems.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
