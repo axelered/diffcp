@@ -2,10 +2,12 @@ import type { ReactNode } from 'react'
 import clsx from 'clsx'
 
 export function AppStageBadge({
+	className,
 	icon,
 	label,
 	state = 'done'
 }: {
+	className?: string
 	icon: ReactNode
 	label: string
 	state?: 'done' | 'active' | 'idle'
@@ -14,6 +16,7 @@ export function AppStageBadge({
 		<div
 			className={clsx(
 				`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm shadow-sm`,
+				className,
 				{
 					done: 'border-emerald-200 bg-emerald-50 text-emerald-700',
 					active: 'border-blue-200 bg-blue-50 text-blue-700',

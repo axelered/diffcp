@@ -7,7 +7,7 @@ export function AppWebsiteBadge({
 }: {
 	name: string
 	domain: string
-	index: number
+	index: number | string
 }) {
 	return (
 		<div className='inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white p-1 text-sm shadow-sm'>
@@ -15,9 +15,9 @@ export function AppWebsiteBadge({
 				<GlobeIcon className='h-4 w-4' />
 			</div>
 
-			<div className='flex items-center gap-2'>
-				<span className='font-medium text-gray-900'>{name}</span>
-				<span className='text-xs text-gray-500'>{domain}</span>
+			<div className='flex min-w-0 items-center gap-2'>
+				<span className='truncate font-medium text-gray-900'>{name}</span>
+				<span className='truncate text-xs text-gray-500'>{domain}</span>
 			</div>
 
 			<div className='flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700'>
