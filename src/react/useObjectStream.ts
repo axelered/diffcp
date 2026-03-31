@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { fetchObjectStream } from '../core/stream.ts'
+import { fetchObjectStream, type ObjectStream } from '../core/stream.ts'
 
 export interface UseObjectStreamOption<T extends object> {
 	url?: string
@@ -9,8 +9,12 @@ export interface UseObjectStreamOption<T extends object> {
 	keepStale?: boolean
 	// Keep the intermediate value when stopped
 	keepOnStop?: boolean
+	// Triggered when new data frames are received
+	onData?: (data: T) => void
 	// Handle custom events being dispatched in the stream
 	onEvent?: (value: any) => void
+	// Handle individual transmission frames
+	onFrame?: (frame: ObjectStream<T, any>) => void
 }
 
 export interface UseObjectStreamReturn<T extends object, R> {
@@ -107,11 +111,16 @@ export function useObjectStream<T extends object, R = any>(
 				} else {
 					throw Error('Url must be set on the hook when submitting a body object')
 				}
+				const fetchOptions = {
+					onEvent: options.onEvent,
+					onFrame: options.onFrame
+				}
 
 				// Consume the stream
 				let count = 0
 				let lastData: T | undefined = undefined
-				for await (const data of fetchObjectStream<T>(request)) {
+				for await (const data of fetchObjectStream<T>(request, fetchOptions)) {
+					options.onData?.(data)
 					count += 1
 					setValue({ status: 'streaming', value: data, count, error: undefined })
 					lastData = data

@@ -76,7 +76,8 @@ export class ObjectStreamResponse<T extends object, E = any> extends NdJSONStrea
 	}
 }
 
-export interface ObjectStreamRequestInit<T, E> extends RequestInit {
+export interface ObjectStreamRequestInit<T extends object, E> extends RequestInit {
+	onFrame?: (frame: ObjectStream<T, E>) => void
 	onEvent?: (event: E) => void
 	fallbackPlainJson?: boolean
 }
@@ -91,6 +92,7 @@ export async function* fetchObjectStream<T extends object, E = any>(
 
 	try {
 		for await (const data of fetchNdJSON<ObjectStream<T, E>>(input, ndInit)) {
+			init?.onFrame?.(data)
 			if (data.t === 'init') {
 				dataValue = data.d
 				yield dataValue
