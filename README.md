@@ -17,6 +17,7 @@ unopinionated and highly efficient (95%+ compression). It provides all the found
 - ⚡ **Minimal over-the-wire cost** → highly optimized transmission
 - 🔄 **Deterministic state convergence** → frontend always reflects backend truth
 - 🛠 **Drop-in for any existing API** → same endpoint, same type, zero rewrites
+- 🗜️ **Efficient Compression** → Smart embedded compression
 - 🍔 **Zero dependency** → just raw speed
 
 Today's “real-time” APIs especially in AI and chat are a pile of ad-hoc events; tokens, partials, tool calls, patches,
@@ -83,12 +84,12 @@ transmits a minified state diff via the network.
 The DCP protocol is abstracted into messages, and is only composed of 4 message types all composed by a `string` type
 and a data payload.
 
-| Type    | Data         | Description                                                                                                                                                                                                                                                                                                           |
-|---------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `init`  | `T`          | Sends the complete state to the client, typically sent at the beginning of the stream, but can be skipped if the client already has a starting state. It can optionally be sent in between the stream to resync the state completely, useful to prevent state drift of more efficiently transmit large state changes. |
-| `delta` | JSON diff    | [Delta update of the JSON](#json-diff) object containing one or many operations                                                                                                                                                                                                                                       |
-| `done`  | Optional `T` | Indicates the end of the stream and can optionally carry a complete state, to resync the state completely to prevent state drift of more efficiently transmit large state changes.                                                                                                                                    |
-| `event` | `any`        | Custom events that can be emitted during the stream and received by the client application. Events do not affect the state syncing in any way.                                                                                                                                                                        |
+| Type    | Compressed | Data         | Description                                                                                                                                                                                                                                                                                                           |
+|---------|------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `init`  | `1`        | `T`          | Sends the complete state to the client, typically sent at the beginning of the stream, but can be skipped if the client already has a starting state. It can optionally be sent in between the stream to resync the state completely, useful to prevent state drift of more efficiently transmit large state changes. |
+| `delta` | `2`        | JSON diff    | [Delta update of the JSON](#json-diff) object containing one or many operations                                                                                                                                                                                                                                       |
+| `done`  | `3`        | Optional `T` | Indicates the end of the stream and can optionally carry a complete state, to resync the state completely to prevent state drift of more efficiently transmit large state changes.                                                                                                                                    |
+| `event` | `9`         | `any`        | Custom events that can be emitted during the stream and received by the client application. Events do not affect the state syncing in any way.                                                                                                                                                                        |
 
 The messages protocol is carrier agnostic and can therefore support any message driven format and protocol. By default,
 DCP uses a NDJSON streamed carrier.
@@ -100,11 +101,11 @@ by [JsonPatch](https://jsonpatch.com/). Here only add, remove, and replace are s
 introduced which for obvious reasons is very important for AI applications. The diff format is compact and comprised of
 3 operations.
 
-| Type | Operation    | Description                                            |
-|------|--------------|--------------------------------------------------------|
-| `s`  | Set value    | Sets the value indicated by the path                   |
-| `a`  | Append value | Appends to the array or a string indicated by the path |
-| `d`  | Delete value | Deletes the value indicated by the path                |
+| Type | Compressed | Operation    | Description                                            |
+|------|------------|--------------|--------------------------------------------------------|
+| `s`  | `3`        | Set value    | Sets the value indicated by the path                   |
+| `a`  | `1`        | Append value | Appends to the array or a string indicated by the path |
+| `d`  | `2`         | Delete value | Deletes the value indicated by the path                |
 
 An example of the protocol looks like this:
 
@@ -151,6 +152,24 @@ standard this protocol can be used as a response to any HTTP request (GET, POST,
 > [!TIP]
 > Empty lines and objects not matching the defined signature are ignored. JSON parsing errors will cause the request to
 > fail.
+
+### 🗜️ Compression
+
+The base protocol already delivers highly efficient differential streaming, reducing payload size by ~90% on average. 
+It remains human-readable, which makes debugging straightforward. On top of this, an additional **zero-dependency 
+compression layer** reduces bandwidth by a further ~50%, bringing total average compression to ~95% 🚀
+
+```text
+[1,{ ... }]
+[2,[[1,"/text/-"," is n"],[1,"/parts/0/text/-"," is n"]]]
+[2,[[1,2,"o dir"],[1,2,"o dir"]]]
+[2,[[1,2,"ect s"],[1,2,"ect s"]]]
+[2,[[1,2,"tatis"],[1,2,"tatis"],[3,"/meteo/temp",15.2999]]]
+[2,[[1,3,"tic f"],[1,3,"tic f"]]]
+[2,[[1,2,"or “i"],[1,2,"or “i"]]]
+[2,[[1,2,"ncome"],[1,2,"ncome"]]]
+[2,[[1,2," dens"],[1,2," dens"]]]
+```
 
 ### 🚧 MessagePack Carrier
 

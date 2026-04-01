@@ -6,17 +6,13 @@ import {
 	PlainJsonError
 } from './ndjson.ts'
 import { diffApply, diffCreate, type ObjectPatchDiff } from './diff.ts'
-
-export type ObjectStreamInit<T> = { t: 'init'; d: T }
-export type ObjectStreamDelta = { t: 'delta'; d: ObjectPatchDiff }
-export type ObjectStreamDone<T> = { t: 'done'; d?: T }
-export type ObjectStreamEvent<E> = { t: 'event'; d: E }
+import { type CompressedObjectStream, deflate, inflate } from './zip.ts'
 
 export type ObjectStream<T extends object, E> =
-	| ObjectStreamInit<T>
-	| ObjectStreamDelta
-	| ObjectStreamDone<T>
-	| ObjectStreamEvent<E>
+	| { t: 'init'; d: T }
+	| { t: 'delta'; d: ObjectPatchDiff }
+	| { t: 'done'; d?: T }
+	| { t: 'event'; d: E }
 
 export class StreamEvent<E> {
 	constructor(readonly data: E) {}
@@ -32,13 +28,14 @@ export type ObjectStreamIterable<T extends object, E> = AsyncIterable<
 
 export interface ObjectStreamResponseInit extends NDJSONStreamResponseInit {
 	sendDataOnDone?: boolean
+	compressed?: boolean
 }
 
 /**
  * Differential Context Protocol Stream
  */
 export class ObjectStreamResponse<T extends object, E = any> extends NdJSONStreamResponse<
-	ObjectStream<T, E>
+	ObjectStream<T, E> | CompressedObjectStream<T, E>
 > {
 	constructor(stream: ObjectStreamIterable<T, E>, init?: ObjectStreamResponseInit) {
 		async function* wrapped(): AsyncIterable<ObjectStream<T, E>> {
@@ -67,18 +64,20 @@ export class ObjectStreamResponse<T extends object, E = any> extends NdJSONStrea
 			yield init?.sendDataOnDone ? { t: 'done', d: last } : { t: 'done' }
 		}
 
-		super(wrapped(), {
+		const compress = init?.compressed !== false
+		const res = compress ? deflate(wrapped()) : wrapped()
+		super(res, {
 			...init,
 			headers: {
 				...init?.headers,
-				'X-Diff-Version': '1'
+				'X-Diff-Version': compress ? '1; compressed' : '1'
 			}
 		})
 	}
 }
 
 export interface ObjectStreamRequestInit<T extends object, E> extends NdJSONFetchRequestInit<
-	ObjectStream<T, E>
+	ObjectStream<T, E> | CompressedObjectStream<T, E>
 > {
 	// Called for each new data sample received
 	onData?: (data: T) => void
@@ -99,7 +98,8 @@ export async function* fetchObjectStream<T extends object, E = any>(
 	let dataValue: T | undefined = undefined
 
 	try {
-		for await (const data of fetchNdJSON<ObjectStream<T, E>>(input, ndInit)) {
+		const res = fetchNdJSON<CompressedObjectStream<T, E>>(input, ndInit)
+		for await (const data of inflate<T, E>(res)) {
 			init?.onFrame?.(data)
 			if (data.t === 'init') {
 				dataValue = data.d

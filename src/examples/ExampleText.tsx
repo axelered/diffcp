@@ -4,10 +4,19 @@ import { useObjectStream } from '../react/useObjectStream.ts'
 import { AppButton } from './AppButton.tsx'
 import { AppInlineReference } from './AppInlineReference.tsx'
 import { AppWebsiteBadge } from './AppWebsiteBadge.tsx'
-import { BrainIcon, CloudIcon, CloudRainIcon, PauseIcon, RefreshCcw, SendIcon, SunIcon } from 'lucide-react'
+import {
+	BrainIcon,
+	CloudIcon,
+	CloudRainIcon,
+	PauseIcon,
+	RefreshCcw,
+	SendIcon,
+	SunIcon
+} from 'lucide-react'
 import { AppStageBadge } from './AppStageBadge.tsx'
 import { useState } from 'react'
 import clsx from 'clsx'
+import { AppSwitch } from './AppSwitch.tsx'
 
 function Counter({
 	type,
@@ -49,12 +58,13 @@ export function ExampleText() {
 	const initSizes = { data: 0, frame: 0 } as const
 	const [sizes, setSizes] = useState<{ data: number; frame: number }>(initSizes)
 
+	const [compress, setCompress] = useState<boolean>(true)
 	const { submitSync, stop, reset, value, count, isPending } = useObjectStream<ExampleTextState>({
-		url: '/api',
+		url: compress ? '/api?compressed' : '/api',
 		onData: (data) => {
 			setSizes((s) => ({ ...s, data: s.data + JSON.stringify(data).length }))
 		},
-		onFrame: (frame) => {
+		onLine: (frame) => {
 			setSizes((s) => ({ ...s, frame: s.frame + JSON.stringify(frame).length }))
 		}
 	})
@@ -64,7 +74,7 @@ export function ExampleText() {
 	return (
 		<main className='grid h-screen w-screen grid-cols-2 grid-rows-[auto_1fr] overflow-hidden'>
 			<div className='col-span-2 flex items-center justify-between border-b border-gray-300 px-4 py-2'>
-				<div className='flex gap-2'>
+				<div className='flex items-center gap-2'>
 					{isPending ? (
 						<AppButton onClick={() => stop()}>
 							<PauseIcon />
@@ -91,6 +101,8 @@ export function ExampleText() {
 						<RefreshCcw />
 						Reset
 					</AppButton>
+					<p className='mr-2 ml-12'>Enable Compression</p>
+					<AppSwitch checked={compress} onChange={(e) => setCompress(e.target.checked)} />
 				</div>
 				<h1 className='font-mono text-3xl font-semibold'>diffcp</h1>
 			</div>
@@ -99,7 +111,12 @@ export function ExampleText() {
 					<Counter type='n' title='Updates' number={count} />
 					<Counter type='kB' mode='warning' title='Status' number={sizes.data} />
 					<Counter type='kB' mode='good' title='Transmitted' number={sizes.frame} />
-					<Counter type='%' mode='good' title='Compress' number={1 - sizes.frame / sizes.data} />
+					<Counter
+						type='%'
+						mode='good'
+						title='Compress'
+						number={Math.max(0, 1 - sizes.frame / sizes.data)}
+					/>
 				</div>
 				<pre className='min-h-0 flex-1 overflow-auto bg-slate-800 p-4 text-xs text-white'>
 					{value && JSON.stringify(value, null, 2)}
