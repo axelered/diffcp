@@ -65,12 +65,17 @@ export class PlainJsonError extends Error {
 	}
 }
 
+export interface NdJSONFetchRequestInit<T> extends RequestInit {
+	// Called for each JSON line received
+	onLine?: (value: T) => void
+}
+
 /**
  * New line delimited JSON fetch implementation
  */
 export async function* fetchNdJSON<T>(
 	input: string | URL | Request,
-	init?: RequestInit
+	init?: NdJSONFetchRequestInit<T>
 ): AsyncIterable<T> {
 	const res = await fetch(input, init)
 
@@ -98,13 +103,19 @@ export async function* fetchNdJSON<T>(
 			for (const line of lines) {
 				const trimmed = line.trim()
 				if (!trimmed) continue // Ignore empty lines
-				yield JSON.parse(trimmed) as T
+				const v = JSON.parse(trimmed) as T
+				init?.onLine?.(v)
+				yield v
 			}
 		}
 
 		// Flush any remaining line
 		const tail = buffer.trim()
-		if (tail) yield JSON.parse(tail) as T
+		if (tail) {
+			const v = JSON.parse(tail) as T
+			init?.onLine?.(v)
+			yield v
+		}
 	} else if (type === 'application/json') {
 		// Fail but conserve the data, may be used as fallback
 		throw new PlainJsonError(await res.json())

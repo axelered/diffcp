@@ -1,5 +1,6 @@
 import {
 	fetchNdJSON,
+	type NdJSONFetchRequestInit,
 	NdJSONStreamResponse,
 	type NDJSONStreamResponseInit,
 	PlainJsonError
@@ -76,9 +77,16 @@ export class ObjectStreamResponse<T extends object, E = any> extends NdJSONStrea
 	}
 }
 
-export interface ObjectStreamRequestInit<T extends object, E> extends RequestInit {
-	onFrame?: (frame: ObjectStream<T, E>) => void
+export interface ObjectStreamRequestInit<T extends object, E> extends NdJSONFetchRequestInit<
+	ObjectStream<T, E>
+> {
+	// Called for each new data sample received
+	onData?: (data: T) => void
+	// Called for each custom event received
 	onEvent?: (event: E) => void
+	// Triggered when new data frames are received
+	onFrame?: (frame: ObjectStream<T, E>) => void
+	// If the client accepts plain json responses as valid states
 	fallbackPlainJson?: boolean
 }
 
@@ -95,9 +103,11 @@ export async function* fetchObjectStream<T extends object, E = any>(
 			init?.onFrame?.(data)
 			if (data.t === 'init') {
 				dataValue = data.d
+				init?.onData?.(dataValue)
 				yield dataValue
 			} else if (data.t === 'delta') {
 				dataValue = diffApply<T>(dataValue, data.d)
+				init?.onData?.(dataValue)
 				yield dataValue
 			} else if (data.t === 'event') {
 				onEvent?.(data.d)

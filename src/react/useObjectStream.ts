@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
-import { fetchObjectStream, type ObjectStream } from '../core/stream.ts'
+import { fetchObjectStream, type ObjectStreamRequestInit } from '../core/stream.ts'
 
-export interface UseObjectStreamOption<T extends object> {
+export type UseObjectStreamOption<T extends object> = {
 	url?: string
 	method?: RequestInit['method']
 	initialValue?: T | undefined
@@ -9,13 +9,7 @@ export interface UseObjectStreamOption<T extends object> {
 	keepStale?: boolean
 	// Keep the intermediate value when stopped
 	keepOnStop?: boolean
-	// Triggered when new data frames are received
-	onData?: (data: T) => void
-	// Handle custom events being dispatched in the stream
-	onEvent?: (value: any) => void
-	// Handle individual transmission frames
-	onFrame?: (frame: ObjectStream<T, any>) => void
-}
+} & ObjectStreamRequestInit<T, any>
 
 export interface UseObjectStreamReturn<T extends object, R> {
 	status: 'idle' | 'submitted' | 'streaming' | 'stopped' | 'done' | 'error'
@@ -48,12 +42,17 @@ type InnerStatus<T extends object, R> = Pick<
 	'status' | 'value' | 'count' | 'error'
 >
 
-export function useObjectStream<T extends object, R = any>(
-	options: UseObjectStreamOption<T>
-): UseObjectStreamReturn<T, R> {
+export function useObjectStream<T extends object, R = any>({
+	url,
+	method,
+	initialValue,
+	keepStale,
+	keepOnStop,
+	...fetchOptions
+}: UseObjectStreamOption<T>): UseObjectStreamReturn<T, R> {
 	const resetValue = {
 		status: 'idle',
-		value: options?.initialValue,
+		value: initialValue,
 		count: 0,
 		error: undefined
 	} as const
@@ -67,7 +66,7 @@ export function useObjectStream<T extends object, R = any>(
 			ref.current = null
 		}
 		setValue(resetValue)
-	}, [options.initialValue, setValue])
+	}, [initialValue, setValue])
 
 	const stop = useCallback(() => {
 		if (ref.current) {
@@ -90,7 +89,7 @@ export function useObjectStream<T extends object, R = any>(
 			try {
 				setValue((old) => ({
 					status: 'submitted',
-					value: options?.keepStale ? old.value : undefined,
+					value: keepStale ? old.value : undefined,
 					count: 0,
 					error: undefined
 				}))
@@ -99,9 +98,9 @@ export function useObjectStream<T extends object, R = any>(
 				let request: Request
 				if (body instanceof Request) {
 					request = body as Request
-				} else if (options.url) {
-					request = new Request(options.url, {
-						method: options.method || 'GET',
+				} else if (url) {
+					request = new Request(url, {
+						method: method || 'GET',
 						headers: new Headers({
 							'content-type': 'application/json'
 						}),
@@ -111,16 +110,11 @@ export function useObjectStream<T extends object, R = any>(
 				} else {
 					throw Error('Url must be set on the hook when submitting a body object')
 				}
-				const fetchOptions = {
-					onEvent: options.onEvent,
-					onFrame: options.onFrame
-				}
 
 				// Consume the stream
 				let count = 0
 				let lastData: T | undefined = undefined
 				for await (const data of fetchObjectStream<T>(request, fetchOptions)) {
-					options.onData?.(data)
 					count += 1
 					setValue({ status: 'streaming', value: data, count, error: undefined })
 					lastData = data
@@ -132,7 +126,7 @@ export function useObjectStream<T extends object, R = any>(
 				return lastData
 			} catch (e) {
 				if (abortController.signal.aborted) {
-					if (options?.keepOnStop === false) setValue(resetValue)
+					if (keepOnStop === false) setValue(resetValue)
 					return undefined
 				} else {
 					setValue({ status: 'error', value: undefined, count: 0, error: e as any })
@@ -142,7 +136,7 @@ export function useObjectStream<T extends object, R = any>(
 				ref.current = null
 			}
 		},
-		[setValue]
+		[setValue, url, method]
 	)
 
 	const submitSync = useCallback(
