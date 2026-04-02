@@ -53,7 +53,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@diffcp/core": "^0.0.0"
+    "@diffcp/core": "packages/core:^"
   },
   "peerDependencies": {
     "react": ">=18"
