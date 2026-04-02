@@ -1,5 +1,5 @@
-import type { ObjectPatchDiff } from './diff.ts'
-import type { ObjectStream } from './stream.ts'
+import type { ObjectPatchDiff } from './diff'
+import type { ObjectStream } from './stream'
 
 export type CompressedObjectPatchDiff = [1 | 3, number | string, any] | [2, number | string]
 

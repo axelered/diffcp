@@ -1,7 +1,8 @@
+import { ObjectStreamResponse } from '@diffcp/core'
+import { exampleTextApi } from '../examples/exampleTextApi.ts'
+
 export const prerender = false
 
-import { ObjectStreamResponse } from '../core/stream.ts'
-import { exampleTextApi } from '../examples/exampleTextApi.ts'
 
 export function GET({ request }: { request: Request }) {
 	const compressed = new URL(request.url).searchParams.has('compressed')

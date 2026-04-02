@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { diffCreate } from '../src/core/diff.ts'
-import { data1, deepCopy } from './utils.ts'
+import { diffCreate } from '../src'
+import { data1, deepCopy } from './utils'
 
 describe('diff create common', () => {
 	it('init from none', () => {

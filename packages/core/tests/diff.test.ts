@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { diffApply, diffCreate } from '../src/core/diff.ts'
-import { data1, deepCopy } from './utils.ts'
+import { diffApply, diffCreate } from '../src'
+import { data1, deepCopy } from './utils'
 
 function reflects(from: any, to: any) {
 	const diff = diffCreate(from, to)

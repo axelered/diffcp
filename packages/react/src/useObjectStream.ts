@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { fetchObjectStream, type ObjectStreamRequestInit } from '../core/stream.ts'
+import { fetchObjectStream, type ObjectStreamRequestInit } from '@diffcp/core'
 
 export type UseObjectStreamOption<T extends object> = {
 	url?: string

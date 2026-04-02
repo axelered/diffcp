@@ -4,9 +4,9 @@ import {
 	NdJSONStreamResponse,
 	type NDJSONStreamResponseInit,
 	PlainJsonError
-} from './ndjson.ts'
-import { diffApply, diffCreate, type ObjectPatchDiff } from './diff.ts'
-import { type CompressedObjectStream, deflate, inflate } from './zip.ts'
+} from './ndjson'
+import { diffApply, diffCreate, type ObjectPatchDiff } from './diff'
+import { type CompressedObjectStream, deflate, inflate } from './zip'
 
 export type ObjectStream<T extends object, E> =
 	| { t: 'init'; d: T }

@@ -1,0 +1,53 @@
+{
+  "name": "@diffcp/core",
+  "version": "0.0.0",
+  "description": "Open-source standard for connecting AI user interfaces to backend systems",
+  "author": {
+    "name": "Axelered AI",
+    "email": "dev@axelered.com",
+    "url": "https://axelered.com/"
+  },
+  "contributors": [
+    {
+      "name": "Borut Svara",
+      "email": "borut@axelered.com",
+      "url": "https://svara.io/"
+    }
+  ],
+  "keywords": [
+    "ai",
+    "protocol",
+    "axelered"
+  ],
+  "homepage": "https://github.com/axelered/diffcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/axelered/diffcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/axelered/diffcp/issues",
+    "email": "dev@axelered.com"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "types": "dist/index.d.ts",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  }
+}

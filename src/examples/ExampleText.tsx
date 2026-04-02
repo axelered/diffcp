@@ -1,6 +1,6 @@
 import type { ExampleTextState } from './exampleTextApi.ts'
 import { AppMessage } from './AppMessage.tsx'
-import { useObjectStream } from '../react/useObjectStream.ts'
+import { useObjectStream } from '@diffcp/react'
 import { AppButton } from './AppButton.tsx'
 import { AppInlineReference } from './AppInlineReference.tsx'
 import { AppWebsiteBadge } from './AppWebsiteBadge.tsx'
