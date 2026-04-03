@@ -22,7 +22,7 @@
   "homepage": "https://github.com/axelered/diffcp",
   "repository": {
     "type": "git",
-    "url": "https://github.com/axelered/diffcp.git"
+    "url": "git+https://github.com/axelered/diffcp.git"
   },
   "bugs": {
     "url": "https://github.com/axelered/diffcp/issues",
