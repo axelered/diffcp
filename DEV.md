@@ -9,7 +9,7 @@ Versioning and release is automated via [semantic-release](https://www.npmjs.com
 Publish dry run
 
 ```shell
-npm publish -ws --dry-run 
+npm publish -ws --dry-run
 ```
 
 Semantic version dry run

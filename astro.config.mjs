@@ -6,9 +6,9 @@ import react from '@astrojs/react'
 
 // https://astro.build/config
 export default defineConfig({
-	devToolbar: { enabled: false },
-	integrations: [react()],
-	vite: {
-		plugins: [tailwindcss()]
-	}
+  devToolbar: { enabled: false },
+  integrations: [react()],
+  vite: {
+    plugins: [tailwindcss()]
+  }
 })
