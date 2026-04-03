@@ -5,6 +5,8 @@ on:
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
   id-token: write
 
 jobs:
@@ -33,6 +35,11 @@ jobs:
 
       # this cannot be executed within semantic-release exec
       # it is using the wrong npm version
-      - run: npm publish -ws --provenance --access public
+      - run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            npm publish -ws --provenance --access public
+          else
+            npm publish -ws --provenance --access public --tag canary
+          fi
         env:
           NPM_CONFIG_PROVENANCE: true
