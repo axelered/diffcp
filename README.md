@@ -8,7 +8,7 @@
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
 </p>
 
-Diffcp (Differential Context Protocol) is the new standard to stream AI Agent state to the user interface. Is a 
+Diffcp (Differential Context Protocol) is the new standard to stream AI Agent state to the user interface. Is a
 lightweight alternative to any bespoke AI protocol currently in the industry. Purpose built to be versatile
 unopinionated and highly efficient (95%+ compression). It provides all the foundations:
 
@@ -28,6 +28,11 @@ idea: **evolving state**. No token streams, no custom event tax, and no frontend
 <p align="center">
   <img src="./docs/preview.gif" alt="Differential Context Protocol Preview" />
 </p>
+
+## Packages
+
+- [Diffcp Core](./packages/core/README.md)
+- [Diffcp For React](./packages/react/README.md)
 
 ## What it does
 
@@ -58,7 +63,7 @@ On the client **consume an updating state stream**
 
 ```ts
 for await (const data of fetchObjectStream<MessageType>('/api')) {
-	// Consume data
+  // Consume data
 }
 ```
 
@@ -66,7 +71,7 @@ On in React **just render the value**
 
 ```tsx
 const { value } = useObjectStream<MessageType>({
-    url: '/api'
+  url: '/api'
 })
 return <p>{value?.text}</p>
 ```
@@ -85,11 +90,11 @@ The DCP protocol is abstracted into messages, and is only composed of 4 message 
 and a data payload.
 
 | Type    | Compressed | Data         | Description                                                                                                                                                                                                                                                                                                           |
-|---------|------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------- | ---------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `init`  | `1`        | `T`          | Sends the complete state to the client, typically sent at the beginning of the stream, but can be skipped if the client already has a starting state. It can optionally be sent in between the stream to resync the state completely, useful to prevent state drift of more efficiently transmit large state changes. |
 | `delta` | `2`        | JSON diff    | [Delta update of the JSON](#json-diff) object containing one or many operations                                                                                                                                                                                                                                       |
 | `done`  | `3`        | Optional `T` | Indicates the end of the stream and can optionally carry a complete state, to resync the state completely to prevent state drift of more efficiently transmit large state changes.                                                                                                                                    |
-| `event` | `9`         | `any`        | Custom events that can be emitted during the stream and received by the client application. Events do not affect the state syncing in any way.                                                                                                                                                                        |
+| `event` | `9`        | `any`        | Custom events that can be emitted during the stream and received by the client application. Events do not affect the state syncing in any way.                                                                                                                                                                        |
 
 The messages protocol is carrier agnostic and can therefore support any message driven format and protocol. By default,
 DCP uses a NDJSON streamed carrier.
@@ -102,10 +107,10 @@ introduced which for obvious reasons is very important for AI applications. The 
 3 operations.
 
 | Type | Compressed | Operation    | Description                                            |
-|------|------------|--------------|--------------------------------------------------------|
+| ---- | ---------- | ------------ | ------------------------------------------------------ |
 | `s`  | `3`        | Set value    | Sets the value indicated by the path                   |
 | `a`  | `1`        | Append value | Appends to the array or a string indicated by the path |
-| `d`  | `2`         | Delete value | Deletes the value indicated by the path                |
+| `d`  | `2`        | Delete value | Deletes the value indicated by the path                |
 
 An example of the protocol looks like this:
 
@@ -113,21 +118,21 @@ An example of the protocol looks like this:
 [
   [
     // set a field
-    "s",
-    "/duration",
+    's',
+    '/duration',
     8.511631965637207
   ],
   [
     // set a nested field
-    "s",
-    "/parts/0/state",
-    "done"
+    's',
+    '/parts/0/state',
+    'done'
   ],
   [
     // append to a string
-    "a",
-    "/parts/0/body/-",
-    " a more focused iteration cycle for upcoming experimental model variants."
+    'a',
+    '/parts/0/body/-',
+    ' a more focused iteration cycle for upcoming experimental model variants.'
   ]
 ]
 ```
@@ -155,8 +160,8 @@ standard this protocol can be used as a response to any HTTP request (GET, POST,
 
 ### 🗜️ Compression
 
-The base protocol already delivers highly efficient differential streaming, reducing payload size by ~90% on average. 
-It remains human-readable, which makes debugging straightforward. On top of this, an additional **zero-dependency 
+The base protocol already delivers highly efficient differential streaming, reducing payload size by ~90% on average.
+It remains human-readable, which makes debugging straightforward. On top of this, an additional **zero-dependency
 compression layer** reduces bandwidth by a further ~50%, bringing total average compression to ~95% 🚀
 
 ```text
