@@ -2,39 +2,37 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: "Dry run release (do not Publish)"
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
   id-token: write
 
 jobs:
   publish:
-    runs-on: ubuntu-22.04
+    # ubuntu 24 is queued for way too long
+    # https://docs.npmjs.com/trusted-publishers
+    # https://github.com/npm/cli/issues/8730
+    # https://github.com/idempot-dev/idempot-js/pull/54
+    runs-on: ubuntu-latest
     name: Release
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          # https://github.com/npm/cli/issues/9088
+          node-version: '24'
 
       - run: npm ci
       - run: npm run build -ws
       - run: npm run test -ws
 
-      - name: run semantic-release
-        run: |
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            npx semantic-release --dry-run
-          else
-            npx semantic-release
-          fi
+      # todo : switch to multi-semantic-release
+      - run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # this cannot be executed within semantic-release exec
+      # it is using the wrong npm version
+      - run: npm publish -ws --provenance --access public
+        env:
+          NPM_CONFIG_PROVENANCE: true
