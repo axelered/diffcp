@@ -1,12 +1,12 @@
 export default {
 	branches: [
 		{
-			name: 'main',
+			name: 'main'
 		},
 		{
 			name: 'canary',
-			prerelease: true,
-		},
+			prerelease: true
+		}
 	],
 	plugins: [
 		'@semantic-release/commit-analyzer',
@@ -15,10 +15,10 @@ export default {
 		[
 			'@semantic-release/exec',
 			{
-				"prepareCmd": 'node scripts/version.js ${nextRelease.version}',
-				"publishCmd": "npm publish -ws",
+				prepareCmd: 'node scripts/version.js ${nextRelease.version}',
+				publishCmd: 'npm publish -ws --provenance'
 			}
 		],
-		'@semantic-release/github',
-	],
+		'@semantic-release/github'
+	]
 }

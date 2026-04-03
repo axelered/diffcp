@@ -29,12 +29,6 @@ jobs:
       - run: npm run build -ws
       - run: npm run test -ws
 
-      - name: auth npm
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: run semantic-release
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
