@@ -9,3 +9,7 @@ dist
 .DS_Store
 
 .astro
+
+.pytest_cache
+.venv
+__pycache__
