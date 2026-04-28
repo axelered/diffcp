@@ -3,7 +3,7 @@ name = "diffcp"
 version = "0.1.0"
 description = "Differential Context Protocol (DCP) implementation in Python"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.24.0",
     "pydantic>=2.13.3",
@@ -26,4 +26,26 @@ packages = ["src/diffcp"]
 dev = [
     "pytest>=9.0.3",
     "pytest-asyncio>=1.3.0",
+    "ruff>=0.9.9",
 ]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle - style guide enforcement (PEP 8)
+    "F",  # Pyflakes - logical errors and undefined names
+    "I",  # isort - import sorting
+    "B",  # flake8-bugbear - likely bugs and design issues
+    "UP", # pyupgrade - modern Python patterns
+]
+
+ignore = ["B904"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
