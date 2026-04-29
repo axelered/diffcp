@@ -53,17 +53,13 @@ wheels = [
 
 [[package]]
 name = "diffcp"
-version = "0.1.0"
+version = "0.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "fastapi" },
     { name = "httpx" },
     { name = "pydantic" },
     { name = "pydantic-core" },
-]
-
-[package.optional-dependencies]
-fastapi = [
-    { name = "fastapi" },
 ]
 
 [package.dev-dependencies]
@@ -75,12 +71,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastapi", marker = "extra == 'fastapi'", specifier = ">=0.136.1" },
+    { name = "fastapi", specifier = ">=0.136.1" },
     { name = "httpx", specifier = ">=0.24.0" },
     { name = "pydantic", specifier = ">=2.13.3" },
     { name = "pydantic-core", specifier = ">=2.46.3" },
 ]
-provides-extras = ["fastapi"]
 
 [package.metadata.requires-dev]
 dev = [

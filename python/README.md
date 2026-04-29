@@ -83,8 +83,9 @@ assert result == obj2
 
 ## Features
 
+- **FastAPI Integration**: Built directly on top of FastAPI/Starlette for high-performance streaming.
 - **Pydantic Integration**: Seamlessly handles `BaseModel` instances in streams.
 - **Efficient Deltas**: Uses JSON Pointer (RFC 6901) and string-append optimizations.
 - **Path Compression**: Transparently compresses repetitive JSON paths during transmission.
 - **Heartbeats**: Built-in `\n` pings to keep connections alive through proxies and load balancers.
-- **Zero-Dep Core**: The diff engine and server logic are lightweight, requiring only `pydantic`. The client uses `httpx`.
+- **Lightweight**: Optimized for low overhead and high concurrency.

@@ -1,6 +1,6 @@
 [project]
 name = "diffcp"
-version = "0.1.0"
+version = "0.0.0"
 description = "Differential Context Protocol (DCP) implementation in Python"
 readme = "README.md"
 authors = [
@@ -21,24 +21,17 @@ dependencies = [
     "httpx>=0.24.0",
     "pydantic>=2.13.3",
     "pydantic-core>=2.46.3",
+    "fastapi>=0.136.1",
 ]
 
 [project.urls]
-Homepage = "https://github.com/axelered/diffcp"
-Repository = "https://github.com/axelered/diffcp"
-Issues = "https://github.com/axelered/diffcp/issues"
-
-[project.optional-dependencies]
-fastapi = [
-    "fastapi>=0.136.1",
-]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/diffcp"]
+packages = ["diffcp"]
 
 [dependency-groups]
 dev = [
