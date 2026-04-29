@@ -1,5 +1,5 @@
 [project]
-name = "diffcp"
+name = "diffcp-fastapi"
 version = "0.0.0"
 description = "Differential Context Protocol (DCP) implementation in Python"
 readme = "README.md"

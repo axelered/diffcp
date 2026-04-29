@@ -7,9 +7,9 @@ This package provides a high-performance implementation of the Differential Cont
 ## Installation
 
 ```bash
-pip install diffcp
+pip install diffcp-fastapi
 # or with uv
-uv add diffcp
+uv add diffcp-fastapi
 ```
 
 ## Usage
