@@ -64,7 +64,8 @@ async def fetch_ndjson[T](url: str, *, on_line: Callable[[T], None] | None = Non
                         on_line(val)
                     yield val
             elif content_type == 'application/json':
-                data = await res.json()
+                await res.aread()
+                data = res.json()
                 raise PlainJsonError(data)
             else:
                 raise Exception(f'fetch failed: invalid response content type {ct_header}')
